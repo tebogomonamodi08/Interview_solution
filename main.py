@@ -17,7 +17,7 @@ async def type_title(label, text, delay=0.1):
 # --- TITLE SECTION ---
 with ui.column().classes('items-center pt-8 pb-2'):
     title_label = ui.label('').classes('text-4xl font-bold text-white font-mono')
-    ui.timer(0.5, lambda: asyncio.create_task(
+    ui.timer(0.8, lambda: asyncio.create_task(
         type_title(title_label, '🧠 AI Interview Assistant')
     ), once=True)
 
