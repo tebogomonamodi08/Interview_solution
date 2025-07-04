@@ -1,11 +1,12 @@
 from nicegui import ui
 
-ui.query('body').classes('bg-gray-800')
+with ui.card().tight():
+    ui.label('Testing')
+    ui.button('Click Me', on_click= lambda : ui.label('I am clicked.'))
 
-with ui.card():
-    ui.label('Hey')
+with ui.list():
+    with ui.slide_item('slide me') as slider_1:
+        slider_1.right('Hey', color='red')
 
 
-
-
-ui.run()
+ui.run()  
