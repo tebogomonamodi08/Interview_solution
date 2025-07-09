@@ -1,10 +1,13 @@
 '''
 Name: Audio Transcriber Service
-Takes blob/audio from a the UI and transcribes it into a test using the model from
-faster whisper, benchmark and robust testing of the subsystem will be performed. This
+Takes blob/audio from a the UI and transcribes it into a text using the model from
+faster whisper. Benchmarking and robust testing will be performed, note the timing
+module imported to benchmark model loading, transcription and total time. This
 is one of the components of the interviewer application
 
 Author: Tebogo Monamodi (Not a bot🤖) 
+
+```My goal is to write a clean, robust, and fast service that feels like magic.
 '''
 from faster_whisper import WhisperModel #import WhisperModel from the faster_whisper model
 from fastapi import FastAPI, UploadFile, File
@@ -32,6 +35,6 @@ async def transcribe_audio(file: UploadFile = File(...)):
         'transcribed' : ''.join(text),
         'model_load_time': model_loading_time,
         'transcription_time': transcription_time,
-        'total_time': total_time
+        'total_time': total_time 
 
     }

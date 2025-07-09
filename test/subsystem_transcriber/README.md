@@ -21,7 +21,7 @@ After research and benchmarking, I replaced it with **Faster-Whisper**, a CPU-op
 ## 🔍 Tech Stack
 
 | Tool/Library      | Purpose                                |
-|------------------|----------------------------------------|
+|------------------ |----------------------------------------|
 | FastAPI           | Async Python web framework             |
 | Faster-Whisper    | Optimized ASR model                    |
 | Python AsyncIO    | Non-blocking file I/O                  |
@@ -49,4 +49,6 @@ Base Model(faster whispher)(Accuracy fair)
 
 ##Conlusion
 
-I have observed that 30 seonds audio are the quickest and my sweet sport is between 45-60 seconds for this solution. The best part about my system is that as each audio is transcribes in the backgound the user will be enganging with other questions. I have just address if the user cancels, what happens with the already concantenated audio ?. faster whisper is the the ideal library for my project.
+-Sweet spot is 30–45 seconds per audio clip.
+-Transcription happens in the background while users engage with other interview questions — improving perceived performance.
+-If the user cancels mid-recording, future logic should clean up or discard partial audio already concatenated.
