@@ -1,0 +1,211 @@
+from nicegui import ui
+import asyncio
+import random
+
+questions = [
+    "What inspired you to pursue your career?",
+    "Describe a challenging project you overcame.",
+    "Where do you see yourself in 5 years?",
+    "How do you handle feedback?",
+    "Why are you the ideal candidate?"
+]
+
+motivation_messages = [
+    "🌟 You got this!",
+    "💨 Breathe in, breathe out.",
+    "⭐ You are a star!"
+]
+
+progress_bars = []
+is_paused = False
+
+# === Inject JavaScript ===
+ui.query('body').classes('bg-[#0d1117] text-white')
+ui.add_head_html("""
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+<script>
+let mediaRecorder;
+let audioChunks = [];
+let currentQuestion = 0;
+
+async function startRecording(questionId) {
+    currentQuestion = questionId;
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+
+    mediaRecorder.ondataavailable = event => {
+        if (event.data.size > 0) {
+            audioChunks.push(event.data);
+        }
+    };
+
+    mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+        const formData = new FormData();
+        formData.append("file", audioBlob, `response_q${currentQuestion}.wav`);
+
+        const res = await fetch("http://localhost:8000/transcribe", {
+            method: "POST",
+            body: formData
+        });
+
+        const json = await res.json();
+        document.getElementById(`advice-${currentQuestion}`).innerText = "🧠 Advice: " + (json.Advice || "No advice.");
+        document.getElementById(`transcript-${currentQuestion}`).innerText = "📄 Transcript: " + (json.transcribed || "No transcript.");
+
+        document.getElementById("record-label").style.visibility = "hidden";
+    };
+
+    mediaRecorder.start();
+    document.getElementById("record-label").style.visibility = "visible";
+}
+
+function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
+    }
+}
+</script>
+""")
+
+# === UI Elements ===
+instruction_column = ui.column().classes('animate__animated animate__fadeIn')
+question_column = ui.column().classes('hidden gap-4 w-full justify-start items-center pt-2')
+transition_label = ui.label('').classes('text-sm font-bold text-gray-300 pt-4 opacity-0 text-center')
+recording_label = ui.label('🎙️ Recording...').classes('text-sm font-bold text-green-400 animate__animated animate__pulse animate__infinite').style('text-align: center').props('id=record-label')
+recording_label.set_visibility(False)
+beep_indicator = ui.label('🔴 Interview Starting...').classes('text-sm font-bold text-red-400 animate__animated animate__flash animate__infinite').style('text-align: center')
+beep_indicator.set_visibility(False)
+
+# === Build question UI ===
+def build_questions():
+    question_column.clear()
+    progress_bars.clear()
+    for i, q in enumerate(questions):
+        with ui.column().classes('w-full max-w-[500px] gap-1 items-start'):
+            ui.label(f"Q{i+1}: {q}").classes('text-sm font-bold text-white text-left')
+            ui.label('', id=f'transcript-{i}').classes('text-xs text-gray-300 italic')
+            ui.label('', id=f'advice-{i}').classes('text-xs text-green-300')
+            with ui.element('div').classes('w-full h-[32px] bg-gray-700 overflow-hidden relative rounded').style('position: relative'):
+                bar = ui.element('div').classes('h-full transition-all ease-linear').style('width: 0%; position: absolute; top: 0; left: 0; background-color: #007bff; visibility: hidden')
+                progress_bars.append(bar)
+
+def reset_flow():
+    global is_paused
+    for bar in progress_bars:
+        bar.style('width: 0%')
+        bar.style('visibility: hidden')
+    instruction_column.set_visibility(True)
+    question_column.set_visibility(False)
+    transition_label.set_text('')
+    transition_label.classes('opacity-0')
+    beep_indicator.set_visibility(False)
+    recording_label.set_visibility(False)
+    pause_btn.set_visibility(False)
+    is_paused = False
+    pause_btn.set_text('Pause')
+    start_btn.set_text('Start')
+    start_btn.classes('text-white')
+    start_btn.props('outline color=blue')
+    build_questions()
+
+# === Buttons ===
+start_btn = ui.button(icon='play_arrow', text='Start').classes('text-white').props('outline color=blue')
+cancel_btn = ui.button(icon='close', text='Cancel').classes('text-white').props('outline color=red')
+pause_btn = ui.button('Pause', icon='pause').classes('text-white').props('color=blue')
+pause_btn.set_visibility(False)
+
+async def toggle_pause():
+    global is_paused
+    is_paused = not is_paused
+    pause_btn.set_text('Resume' if is_paused else 'Pause')
+
+pause_btn.on('click', toggle_pause)
+
+async def on_click(_):
+    global is_paused
+    is_paused = False
+    pause_btn.set_text('Pause')
+    start_btn.set_text('Interview Running')
+    start_btn.classes('bg-blue-600 text-white font-bold')
+    start_btn.props(remove='outline color=blue')
+    pause_btn.set_visibility(True)
+    beep_indicator.set_visibility(True)
+
+    await asyncio.sleep(3)
+    beep_indicator.set_visibility(False)
+    instruction_column.set_visibility(False)
+    question_column.set_visibility(True)
+
+    for i in range(len(progress_bars)):
+        transition_label.set_text(random.choice(motivation_messages))
+        transition_label.classes(remove='opacity-0')
+        await asyncio.sleep(3)
+
+        await ui.run_javascript(f"startRecording({i})")
+
+        for count in ["3...", "2...", "1...", "Ready...Go!"]:
+            transition_label.set_text(count)
+            await asyncio.sleep(1)
+
+        transition_label.classes('opacity-0')
+        bar = progress_bars[i]
+        bar.style('visibility: visible')
+
+        for j in range(101):
+            while is_paused:
+                await asyncio.sleep(0.1)
+            bar.style(f'width: {j}%')
+            await asyncio.sleep(0.5)
+
+        await ui.run_javascript("stopRecording()")
+        await asyncio.sleep(2)
+
+    reset_flow()
+
+# === Layout ===
+with ui.column().classes('items-center pt-6 pb-2 mb-3'):
+    ui.label('🧠 AI Interview Assistant').classes('text-4xl font-bold text-white tracking-wide')
+
+with ui.row().classes('flex w-full min-h-screen px-4 pb-4 gap-4 bg-[#0d1117]'):
+    with ui.card().classes('flex-1 bg-[#161b22] rounded-2xl shadow-xl p-4'):
+        ui.label('🎥 Webcam Stream').classes('text-xl font-bold text-white')
+        ui.image('http://localhost:8000/video').classes('rounded-xl w-full h-[280px] object-cover bg-black')
+        ui.column(beep_indicator, recording_label)
+        ui.row(start_btn, cancel_btn, pause_btn).classes('justify-center gap-4 mt-4')
+
+    with ui.card().classes('flex-1 bg-[#161b22] rounded-2xl shadow-xl p-4 overflow-y-auto'):
+        with instruction_column:
+            ui.label('📄 Instructions').classes('text-xl font-bold text-white mb-2')
+            ui.markdown('''
+            1. Click **Start** to begin your interview  
+            2. Speak clearly and stay within frame  
+            3. Your answers will be analyzed for clarity and confidence
+            ''').classes('text-white text-sm')
+            ui.button('Upload CV').props('color=primary outline').classes('mt-2')
+
+        question_column.set_visibility(False)
+        transition_container = ui.column()
+        transition_container.classes('pt-2')
+        transition_container.add(transition_label)
+        build_questions()
+
+# === Launch ===
+start_btn.on('click', on_click)
+cancel_btn.on('click', lambda _: reset_flow())
+
+ui.run()
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -18,7 +18,7 @@ from faster_whisper import WhisperModel
 from fastapi import FastAPI, UploadFile, File, HTTPException
 import time
 import logging
-from services.metrics_data.metrics import process_metrics
+from services.metrics_data.metrics import process_metrics, generate_advice
 
 # === Logging Setup ===
 logging.basicConfig(level=logging.INFO)
@@ -81,13 +81,16 @@ async def transcribe_audio(file: UploadFile = File(...)):
         global latest_metrics
         latest_metrics = metrics
 
+        advice = generate_advice(metrics)
+
         # 7. Return Result
         return {
             "transcribed": transcript,
             "model_load_time": model_loading_time,
             "transcription_time": transcription_time,
             "total_time": total_time,
-            "metrics": metrics
+            "metrics": metrics,
+            "Advice":advice
         }
 
     except HTTPException as http_err:
