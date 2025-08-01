@@ -479,7 +479,7 @@ class QuestionsCard:
                     self.timer_display = ui.label('05:00').classes('timer-display')
                 
                 AppState.questions = random.sample([
-                    'Tell me about yourself in 2 minutes.',
+                    'Tell me about yourself in 1 minutes.',
                     'What are your key strengths for this role?',
                     'Describe a professional challenge you overcame.',
                     'Why are you interested in this position?',
@@ -517,8 +517,8 @@ class QuestionsCard:
         self.transition_overlay = None
     
     async def start_interview(self):
-        AppState.current_state = "interviewing"
-        self.time_remaining = 300
+        AppState.current_state = "interviewing" #Change the start of the right card to interviewing
+        self.time_remaining = 300 #set an initial timer 5 minutes
         
         self.timer_task = asyncio.create_task(self.run_timer())
         

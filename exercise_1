@@ -1,0 +1,36 @@
+from nicegui import ui 
+
+class Counter:
+    def __init__(self):
+        self.count = 0 # This variable will store the actual number, the state as the events are happening
+        self.label = ui.label(f'The starting number is {self.count}')
+        self.setup() #run this function when you create an object, this function will display the initial state
+
+    def setup(self):
+        ui.button('reset', on_click=self.reset) #as soon as the button is pressed call reset
+        ui.button('increment', on_click=self.increment) #as soon as the button is pressed call 
+
+    def reset(self):
+        self.count = 0
+        self.label.text = f'This is it {self.count}'
+
+    
+    def increment(self):
+        self.count+=1
+        self.label.text = f'This is it {self.count}'
+
+app = Counter()
+app
+
+ui.run(dark=True, reload=True)
+
+
+    
+
+    
+        
+        
+        
+
+    
+
